@@ -29,7 +29,7 @@ test("server-renders Kozphy Care", async () => {
 
   const html = await response.text();
   assert.match(html, /Kozphy Care/);
-  assert.match(html, /AI 客服中心/);
-  assert.match(html, /轉接真人/);
+  assert.match(html, /AI Support Center/);
+  assert.match(html, /Talk to a person/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });

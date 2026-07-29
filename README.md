@@ -1,6 +1,6 @@
-# AI customer support center 
+# Kozphy Care AI Support
 
-Traditional Chinese AI customer support center with:
+English-first AI customer support center with:
 
 - OpenAI Responses API integration through a server-only endpoint
 - Safe knowledge-base fallback when no API key is configured

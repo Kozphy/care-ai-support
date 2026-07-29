@@ -25,27 +25,27 @@ export async function generateMetadata(): Promise<Metadata> {
   const origin = `${protocol}://${host}`;
 
   return {
-    title: "Kozphy Care — AI 客服中心",
+    title: "Kozphy Care — AI Support Center",
     description:
-      "結合 AI、核准知識庫與真人轉接的全天候智慧客服中心。",
+      "AI support grounded in an approved knowledge base, with seamless human handoff.",
     openGraph: {
-      title: "Kozphy Care — AI 客服中心",
-      description: "快速解答，也知道何時交給真人。",
+      title: "Kozphy Care — AI Support Center",
+      description: "Fast answers, with a human when it matters.",
       type: "website",
-      locale: "zh_TW",
+      locale: "en_US",
       images: [
         {
           url: `${origin}/og.png`,
           width: 1200,
           height: 630,
-          alt: "Kozphy Care AI 客服中心",
+          alt: "Kozphy Care AI Support Center",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Kozphy Care — AI 客服中心",
-      description: "快速解答，也知道何時交給真人。",
+      title: "Kozphy Care — AI Support Center",
+      description: "Fast answers, with a human when it matters.",
       images: [`${origin}/og.png`],
     },
   };
@@ -57,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-Hant">
+    <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {children}
       </body>

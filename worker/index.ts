@@ -1,5 +1,9 @@
 /** Cloudflare Worker entry point for Kozphy Care. */
-import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
+import {
+  handleImageOptimization,
+  DEFAULT_DEVICE_SIZES,
+  DEFAULT_IMAGE_SIZES,
+} from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 
 interface Env {
@@ -10,7 +14,10 @@ interface Env {
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
-        output(options: { format: string; quality: number }): Promise<{ response(): Response }>;
+        output(options: {
+          format: string;
+          quality: number;
+        }): Promise<{ response(): Response }>;
       };
     };
   };
@@ -29,14 +36,14 @@ type Message = {
 const DEFAULT_MODEL = "gpt-5.6-luna";
 
 const knowledgeBase = `
-Kozphy Care 示範知識庫
-- 方案：Starter 適合個人與小型專案；Growth 適合成長團隊；Enterprise 提供客製整合與專屬支援。實際價格與合約內容需由真人確認。
-- 付款：支援主要信用卡。企業客戶可申請發票付款，需由真人審核。
-- 退款：首次購買後 14 天內可提出退款申請；是否符合資格需由真人依使用情況確認。
-- 帳號：忘記密碼可使用登入頁的「忘記密碼」。若無法收到重設信，先檢查垃圾郵件，再建立服務單。
-- 安全：API 金鑰只存在伺服器端。客服不會要求提供密碼、完整信用卡號或一次性驗證碼。
-- 資料：使用者可以申請匯出或刪除帳號資料；身分確認與執行由真人處理。
-- 支援：AI 全天候提供常見問題協助。付款爭議、帳號所有權、安全事件、法律或合約問題必須轉交真人。
+Kozphy Care demo knowledge base
+- Plans: Starter is for individuals and small projects; Growth is for growing teams; Enterprise includes custom integrations and dedicated support. A support specialist must confirm current pricing and contract terms.
+- Billing: Major credit cards are accepted. Enterprise customers can request invoice billing, subject to review.
+- Refunds: Refund requests may be submitted within 14 days of an initial purchase. Eligibility depends on usage and must be confirmed by a support specialist.
+- Accounts: Use "Forgot password" on the sign-in page. If the reset email does not arrive, check spam before creating a ticket.
+- Security: API keys remain server-side. Support will never ask for a password, full card number, or one-time verification code.
+- Data: Users may request an export or deletion of account data. Identity verification and fulfillment are handled by a support specialist.
+- Support: AI handles common questions around the clock. Billing disputes, account ownership, security incidents, legal matters, contracts, exports, and deletion requests require human review.
 `.trim();
 
 function json(data: unknown, status = 200) {
@@ -62,26 +69,34 @@ function cleanText(value: unknown, maxLength: number) {
 function fallbackReply(message: string) {
   const text = message.toLowerCase();
 
-  if (/真人|專人|客服人員|agent|human|服務單/.test(text)) {
-    return "沒問題。請點選下方「轉接真人服務」，留下聯絡方式與問題摘要，我們會建立服務單接手處理。";
+  if (
+    /agent|human|person|representative|specialist|support ticket|talk to someone/.test(
+      text,
+    )
+  ) {
+    return "Of course. Choose “Talk to a person” below and leave your contact details and a short summary. We’ll create a support ticket and take it from there.";
   }
-  if (/忘記密碼|無法登入|登入|帳號|password|login/.test(text)) {
-    return "如果忘記密碼，請先使用登入頁的「忘記密碼」重設。若收不到重設信，請檢查垃圾郵件；仍無法登入時，我可以幫你轉接真人確認帳號。請不要提供密碼或驗證碼。";
+  if (
+    /forgot.*password|reset.*password|can.?t sign in|cannot sign in|login|log in|account/.test(
+      text,
+    )
+  ) {
+    return "Use “Forgot password” on the sign-in page to reset your password. If the email doesn’t arrive, check your spam folder; if you still can’t sign in, create a human support ticket so we can verify the account. Never share your password or verification code.";
   }
-  if (/退款|退費|refund/.test(text)) {
-    return "首次購買後 14 天內可以提出退款申請；實際資格需要依使用情況由真人確認。你可以點選「轉接真人服務」建立退款服務單。";
+  if (/refund|money back/.test(text)) {
+    return "You may submit a refund request within 14 days of an initial purchase. Eligibility depends on usage and must be confirmed by a support specialist. Choose “Talk to a person” to create a refund ticket.";
   }
-  if (/付款|信用卡|發票|billing|payment|invoice/.test(text)) {
-    return "目前支援主要信用卡；企業客戶可申請發票付款，但需要人工審核。若是扣款爭議，建議直接轉接真人處理。";
+  if (/billing|payment|credit card|invoice|charge/.test(text)) {
+    return "We accept major credit cards. Enterprise customers can request invoice billing, subject to review. For a disputed charge, please create a human support ticket.";
   }
-  if (/價格|方案|費用|price|pricing|plan/.test(text)) {
-    return "目前規劃 Starter、Growth 與 Enterprise 三種方案，分別對應個人、小型團隊與需要客製整合的企業。實際價格與合約內容請轉接真人確認。";
+  if (/price|pricing|plan|cost|subscription/.test(text)) {
+    return "Kozphy Care offers Starter for individuals and small projects, Growth for growing teams, and Enterprise for custom integrations and dedicated support. A support specialist must confirm current pricing and contract terms.";
   }
-  if (/安全|隱私|資料|刪除|匯出|security|privacy|data/.test(text)) {
-    return "API 金鑰只保存在伺服器端。客服不會要求你的密碼、完整信用卡號或一次性驗證碼。你也可以申請匯出或刪除帳號資料，這類申請會轉交真人完成身分確認。";
+  if (/security|privacy|data|delete|deletion|export/.test(text)) {
+    return "API keys remain on the server, and support will never ask for your password, full card number, or one-time verification code. You may request an export or deletion of account data; a support specialist will verify your identity and complete the request.";
   }
 
-  return "我目前只能根據已核准的知識庫回答方案、付款、退款、帳號與資料安全問題。這個問題需要更多產品資訊；你可以換個方式描述，或點選「轉接真人服務」。";
+  return "I can only answer questions covered by the approved knowledge base: plans, billing, refunds, accounts, and data security. I don’t have enough product information to answer that confidently. Try rephrasing, or choose “Talk to a person.”";
 }
 
 async function safetyIdentifier(sessionId: string) {
@@ -123,7 +138,7 @@ async function handleChat(request: Request, env: Env) {
   try {
     body = await readJson(request);
   } catch {
-    return json({ error: "請求格式不正確。" }, 400);
+    return json({ error: "Invalid request format." }, 400);
   }
 
   const rawMessages = Array.isArray(body.messages) ? body.messages : [];
@@ -142,7 +157,7 @@ async function handleChat(request: Request, env: Env) {
     [...messages].reverse().find((message) => message.role === "user")?.content ??
     "";
   if (!lastUserMessage) {
-    return json({ error: "請輸入問題。" }, 400);
+    return json({ error: "Please enter a question." }, 400);
   }
 
   if (!env.OPENAI_API_KEY) {
@@ -161,13 +176,13 @@ async function handleChat(request: Request, env: Env) {
       },
       body: JSON.stringify({
         model: env.OPENAI_MODEL || DEFAULT_MODEL,
-        instructions: `你是 Kozphy Care 的客服助理。直接回答問題，語氣清楚、冷靜、有同理心。
-只使用下方知識庫中的事實，不要猜測價格、政策、期限或帳號狀態。
-使用者使用什麼語言，就用相同語言回答。
-付款爭議、帳號所有權、安全事件、法律、合約、資料匯出或刪除必須建議轉接真人。
-永遠不要索取密碼、完整信用卡號或一次性驗證碼。
-若知識庫不足，坦白說明並邀請使用者建立真人服務單。
-每次回答以 2 到 5 句為主，不要使用 Markdown 表格。
+        instructions: `You are Kozphy Care’s customer support assistant. Answer directly in a clear, calm, empathetic tone.
+Use only facts in the knowledge base below. Never guess pricing, policy, deadlines, or account status.
+Reply in English unless the user explicitly asks for another language.
+Recommend human handoff for billing disputes, account ownership, security incidents, legal or contract matters, data exports, or deletions.
+Never request passwords, full card numbers, or one-time verification codes.
+If the knowledge base is insufficient, say so and invite the user to create a human support ticket.
+Keep replies to 2–5 sentences and do not use Markdown tables.
 
 ${knowledgeBase}`,
         input: messages,
@@ -220,13 +235,13 @@ async function ensureTicketsTable(db: D1Database) {
 }
 
 async function handleTicket(request: Request, env: Env) {
-  if (!env.DB) return json({ error: "服務單功能尚未啟用。" }, 503);
+  if (!env.DB) return json({ error: "Ticketing is not enabled." }, 503);
 
   let body: Record<string, unknown>;
   try {
     body = await readJson(request, 12_000);
   } catch {
-    return json({ error: "請求格式不正確。" }, 400);
+    return json({ error: "Invalid request format." }, 400);
   }
 
   const name = cleanText(body.name, 80);
@@ -235,7 +250,10 @@ async function handleTicket(request: Request, env: Env) {
   const message = cleanText(body.message, 2_000);
 
   if (!name || !message || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return json({ error: "請填寫有效的聯絡資料與問題摘要。" }, 400);
+    return json(
+      { error: "Enter valid contact details and an issue summary." },
+      400,
+    );
   }
 
   await ensureTicketsTable(env.DB);
@@ -255,7 +273,11 @@ async function handleTicket(request: Request, env: Env) {
 // const imageConfig: ImageConfig = { dangerouslyAllowSVG: true };
 
 const worker = {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<Response> {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/status" && request.method === "GET") {
@@ -275,14 +297,24 @@ const worker = {
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
-      return handleImageOptimization(request, {
-        fetchAsset: (path) => env.ASSETS.fetch(new Request(new URL(path, request.url))),
-        transformImage: async (body, { width, format, quality }) => {
-          const result = await env.IMAGES.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
-          return result.response();
+      return handleImageOptimization(
+        request,
+        {
+          fetchAsset: (path) =>
+            env.ASSETS.fetch(new Request(new URL(path, request.url))),
+          transformImage: async (body, { width, format, quality }) => {
+            const result = await env.IMAGES.input(body)
+              .transform(width > 0 ? { width } : {})
+              .output({ format, quality });
+            return result.response();
+          },
         },
-      }, allowedWidths);
+        allowedWidths,
+      );
     }
 
     return handler.fetch(request, env, ctx);
   },
+};
+
+export default worker;
